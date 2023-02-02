@@ -75,69 +75,67 @@ more information on modifiers."
               (replace-match path t t nil 2))))
         (replace-regexp-in-string "\\\\\\([#%]\\)" "\\1" (buffer-string) t)))))
 
-(defun +evil--insert-newline (&optional above _noextranewline)
-  (let ((pos (save-excursion (beginning-of-line-text) (point)))
-        comment-auto-fill-only-comments)
-    (require 'smartparens)
-    (evil-narrow-to-field
-      (if above
-          (if (save-excursion (nth 4 (sp--syntax-ppss pos)))
-              (evil-save-goal-column
-                (setq evil-auto-indent nil)
-                (goto-char pos)
-                (let ((ws (abs (skip-chars-backward " \t"))))
-                  ;; FIXME oh god why
-                  (save-excursion
-                    (if comment-line-break-function
-                        (funcall comment-line-break-function nil)
-                      (comment-indent-new-line))
-                    (when (and (derived-mode-p 'c-mode 'c++-mode 'objc-mode 'java-mode 'js2-mode)
-                               (eq (char-after) ?/))
-                      (insert "*"))
-                    (insert
-                     (make-string (max 0 (+ ws (skip-chars-backward " \t")))
-                                  32)))
-                  (insert (make-string (max 1 ws) 32))))
-            (evil-move-beginning-of-line)
-            (insert (if use-hard-newlines hard-newline "\n"))
-            (forward-line -1)
-            (back-to-indentation))
-        (evil-move-end-of-line)
-        (cond ((sp-point-in-comment pos)
-               (setq evil-auto-indent nil)
-               (if comment-line-break-function
-                   (funcall comment-line-break-function nil)
-                 (comment-indent-new-line)))
-              ;; TODO Find a better way to do this
-              ((and (eq major-mode 'haskell-mode)
-                    (fboundp 'haskell-indentation-newline-and-indent))
-               (setq evil-auto-indent nil)
-               (haskell-indentation-newline-and-indent))
-              (t
-               (insert (if use-hard-newlines hard-newline "\n"))
-               (back-to-indentation)))))))
+;;(defun +evil--insert-newline (&optional above _noextranewline)
+;;  (let ((pos (save-excursion (beginning-of-line-text) (point)))
+;;        comment-auto-fill-only-comments)
+;;    (require 'smartparens)
+;;    (evil-narrow-to-field
+;;      (if above
+;;          (if (save-excursion (nth 4 (sp--syntax-ppss pos)))
+;;              (evil-save-goal-column
+;;                (setq evil-auto-indent nil)
+;;                (goto-char pos)
+;;                (let ((ws (abs (skip-chars-backward " \t"))))
+;;                  ;; FIXME oh god why
+;;                  (save-excursion
+;;                    (if comment-line-break-function
+;;                        (funcall comment-line-break-function nil)
+;;                      (comment-indent-new-line))
+;;                    (when (and (derived-mode-p 'c-mode 'c++-mode 'objc-mode 'java-mode 'js2-mode)
+;;                               (eq (char-after) ?/))
+;;                      (insert "*"))
+;;                    (insert
+;;                     (make-string (max 0 (+ ws (skip-chars-backward " \t")))
+;;                                  32)))
+;;                  (insert (make-string (max 1 ws) 32))))
+;;            (evil-move-beginning-of-line)
+;;            (insert (if use-hard-newlines hard-newline "\n"))
+;;            (forward-line -1)
+;;            (back-to-indentation))
+;;        (evil-move-end-of-line)
+;;        (cond ((sp-point-in-comment pos)
+;;               (setq evil-auto-indent nil)
+;;               (if comment-line-break-function
+;;                   (funcall comment-line-break-function nil)
+;;                 (comment-indent-new-line)))
+;;              ;; TODO Find a better way to do this
+;;              ((and (eq major-mode 'haskell-mode)
+;;                    (fboundp 'haskell-indentation-newline-and-indent))
+;;               (setq evil-auto-indent nil)
+;;               (haskell-indentation-newline-and-indent))
+;;              (t
+;;               (insert (if use-hard-newlines hard-newline "\n"))
+;;               (back-to-indentation)))))))
 
-;;;###autoload
-(defun +evil--insert-newline-below-and-respect-comments-a (fn count)
-  (if (or (not +evil-want-o/O-to-continue-comments)
-          (not (eq this-command 'evil-open-below))
-          (evil-insert-state-p)
-          (evil-emacs-state-p))
-      (funcall fn count)
-    (letf! (defun evil-insert-newline-below () (+evil--insert-newline))
-      (let ((evil-auto-indent evil-auto-indent))
-        (funcall fn count)))))
+;;(defun +evil--insert-newline-below-and-respect-comments-a (fn count)
+;;  (if (or (not +evil-want-o/O-to-continue-comments)
+;;          (not (eq this-command 'evil-open-below))
+;;          (evil-insert-state-p)
+;;          (evil-emacs-state-p))
+;;      (funcall fn count)
+;;    (letf! (defun evil-insert-newline-below () (+evil--insert-newline))
+;;      (let ((evil-auto-indent evil-auto-indent))
+;;        (funcall fn count)))))
 
-;;;###autoload
-(defun +evil--insert-newline-above-and-respect-comments-a (fn count)
-  (if (or (not +evil-want-o/O-to-continue-comments)
-          (not (eq this-command 'evil-open-above))
-          (evil-insert-state-p)
-          (evil-emacs-state-p))
-      (funcall fn count)
-    (letf! (defun evil-insert-newline-above () (+evil--insert-newline 'above))
-      (let ((evil-auto-indent evil-auto-indent))
-        (funcall fn count)))))
+;;(defun +evil--insert-newline-above-and-respect-comments-a (fn count)
+;;  (if (or (not +evil-want-o/O-to-continue-comments)
+;;          (not (eq this-command 'evil-open-above))
+;;          (evil-insert-state-p)
+;;          (evil-emacs-state-p))
+;;      (funcall fn count)
+;;    (letf! (defun evil-insert-newline-above () (+evil--insert-newline 'above))
+;;      (let ((evil-auto-indent evil-auto-indent))
+;;        (funcall fn count)))))
 
 ;;;###autoload (autoload '+evil-window-split-a "editor/evil/autoload/advice" nil t)
 (evil-define-command +evil-window-split-a (&optional count file)

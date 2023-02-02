@@ -57,9 +57,9 @@
   ;; Exit snippets on ESC from normal mode
   (add-hook 'doom-escape-hook #'yas-abort-snippet)
 
-  (after! smartparens
-    ;; tell smartparens overlays not to interfere with yasnippet keybinds
-    (advice-add #'yas-expand :before #'sp-remove-active-pair-overlay))
+;;  (after! smartparens
+;;    ;; tell smartparens overlays not to interfere with yasnippet keybinds
+;;    (advice-add #'yas-expand :before #'sp-remove-active-pair-overlay))
 
   ;; (Evil only) fix off-by-one issue with line-wise visual selections in
   ;; `yas-insert-snippet', and switches to insert mode afterwards.

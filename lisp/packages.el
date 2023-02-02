@@ -31,7 +31,6 @@
 (package! dtrt-indent :pin "d4fd1b4977eb0d534844fddf01c3c51c70c57205")
 (package! helpful :pin "94c25337b2de2f9da60914a7c0c6cca9584c0231")
 (package! pcre2el :pin "38c6f80c787da547287db96b495e5b695ca0b4b8")
-(package! smartparens :pin "7afd647395018a26633673ed92ce7a9cb3ccb8f2")
 (package! ws-butler
   ;; Use my fork of ws-butler, which has a few choice improvements and
   ;; optimizations (the original has been abandoned).

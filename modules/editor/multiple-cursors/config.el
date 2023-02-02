@@ -77,12 +77,12 @@
   (setq evil-mc-enable-bar-cursor (not (or IS-MAC
                                            IS-WINDOWS)))
 
-  (after! smartparens
-    ;; Make evil-mc cooperate with smartparens better
-    (let ((vars (cdr (assq :default evil-mc-cursor-variables))))
-      (unless (memq (car sp--mc/cursor-specific-vars) vars)
-        (setcdr (assq :default evil-mc-cursor-variables)
-                (append vars sp--mc/cursor-specific-vars)))))
+;;  (after! smartparens
+;;    ;; Make evil-mc cooperate with smartparens better
+;;    (let ((vars (cdr (assq :default evil-mc-cursor-variables))))
+;;      (unless (memq (car sp--mc/cursor-specific-vars) vars)
+;;        (setcdr (assq :default evil-mc-cursor-variables)
+;;                (append vars sp--mc/cursor-specific-vars)))))
 
   ;; Whitelist more commands
   (dolist (fn '((backward-kill-word)
