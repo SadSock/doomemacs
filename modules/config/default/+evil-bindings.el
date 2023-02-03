@@ -250,20 +250,6 @@
        :n "]r"  #'rotate-text
        :n "[r"  #'rotate-text-backward)
 
-      (:when (modulep! :editor multiple-cursors)
-       ;; evil-multiedit
-       :v  "R"     #'evil-multiedit-match-all
-       :n  "M-d"   #'evil-multiedit-match-symbol-and-next
-       :n  "M-D"   #'evil-multiedit-match-symbol-and-prev
-       :v  "M-d"   #'evil-multiedit-match-and-next
-       :v  "M-D"   #'evil-multiedit-match-and-prev
-       :nv "C-M-d" #'evil-multiedit-restore
-       (:after evil-multiedit
-        (:map evil-multiedit-mode-map
-         :nv "M-d" #'evil-multiedit-match-and-next
-         :nv "M-D" #'evil-multiedit-match-and-prev
-         [return]  #'evil-multiedit-toggle-or-restrict-region)))
-
       (:when (modulep! :editor snippets)
        ;; auto-yasnippet
        :i  [C-tab] #'aya-expand

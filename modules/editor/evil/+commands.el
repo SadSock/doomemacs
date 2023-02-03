@@ -10,7 +10,6 @@
 (evil-ex-define-cmd "enhtml"       #'+web:encode-html-entities)
 (evil-ex-define-cmd "dehtml"       #'+web:decode-html-entities)
 (evil-ex-define-cmd "mc"           #'+multiple-cursors:evil-mc)
-(evil-ex-define-cmd "iedit"        #'evil-multiedit-ex-match)
 (evil-ex-define-cmd "na[rrow]"     #'+evil:narrow-buffer)
 (evil-ex-define-cmd "retab"        #'+evil:retab)
 (evil-ex-define-cmd "rev[erse]"    #'+evil:reverse-lines)

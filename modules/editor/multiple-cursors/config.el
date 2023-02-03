@@ -10,19 +10,6 @@
 ;;
 ;;; Packages
 
-(use-package! evil-multiedit
-  :when (modulep! :editor evil)
-  :defer t)
-
-
-(use-package! iedit
-  :when (modulep! :completion vertico)
-  :defer t
-  :init
-  ;; Fix conflict with embark.
-  (setq iedit-toggle-key-default nil))
-
-
 (use-package! evil-mc
   :when (modulep! :editor evil)
   :commands (evil-mc-make-cursor-here
