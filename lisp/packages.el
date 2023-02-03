@@ -23,7 +23,6 @@
 (package! all-the-icons :pin "51bf77da1ebc3c199dfc11f54c0dce67559f5f40")
 (package! hide-mode-line :pin "bc5d293576c5e08c29e694078b96a5ed85631942")
 (package! highlight-numbers :pin "8b4744c7f46c72b1d3d599d4fb75ef8183dee307")
-(package! rainbow-delimiters :pin "a32b39bdfe6c61c322c37226d66e1b6d4f107ed0")
 (package! restart-emacs :pin "1607da2bc657fe05ae01f7fdf26f716eafead02c")
 
 ;; doom-editor.el
