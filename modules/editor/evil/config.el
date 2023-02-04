@@ -114,13 +114,6 @@ directives. By default, this only recognizes C directives.")
     ;; `evil-delete' in wgrep buffers.
     (define-key wgrep-mode-map [remap evil-delete] #'+evil-delete))
 
-  (add-hook! 'doom-escape-hook
-    (defun +evil-disable-ex-highlights-h ()
-      "Disable ex search buffer highlights."
-      (when (evil-ex-hl-active-p 'evil-ex-search)
-        (evil-ex-nohighlight)
-        t)))
-
 
   ;; --- evil hacks -------------------------
   (after! eldoc
@@ -183,8 +176,6 @@ directives. By default, this only recognizes C directives.")
              (funcall fill-region from to justify t to-eop))
       (apply fn args)))
 
-  ;; Make ESC (from normal mode) the universal escaper. See `doom-escape-hook'.
-  (advice-add #'evil-force-normal-state :after #'+evil-escape-a)
 
   ;; monkey patch `evil-ex-replace-special-filenames' to improve support for
   ;; file modifiers like %:p:h. This adds support for most of vim's modifiers,
@@ -235,170 +226,8 @@ directives. By default, this only recognizes C directives.")
   (add-transient-hook! 'evil-ex (provide 'evil-ex))
   (after! evil-ex (load! "+commands")))
 
-
 ;;
 ;;; Packages
-
-(use-package! evil-easymotion
-  :after-call doom-first-input-hook
-  :commands evilem-create evilem-default-keybindings
-  :config
-  ;; Use evil-search backend, instead of isearch
-  (evilem-make-motion evilem-motion-search-next #'evil-ex-search-next
-                      :bind ((evil-ex-search-highlight-all nil)))
-  (evilem-make-motion evilem-motion-search-previous #'evil-ex-search-previous
-                      :bind ((evil-ex-search-highlight-all nil)))
-  (evilem-make-motion evilem-motion-search-word-forward #'evil-ex-search-word-forward
-                      :bind ((evil-ex-search-highlight-all nil)))
-  (evilem-make-motion evilem-motion-search-word-backward #'evil-ex-search-word-backward
-                      :bind ((evil-ex-search-highlight-all nil)))
-
-  ;; Rebind scope of w/W/e/E/ge/gE evil-easymotion motions to the visible
-  ;; buffer, rather than just the current line.
-  (put 'visible 'bounds-of-thing-at-point (lambda () (cons (window-start) (window-end))))
-  (evilem-make-motion evilem-motion-forward-word-begin #'evil-forward-word-begin :scope 'visible)
-  (evilem-make-motion evilem-motion-forward-WORD-begin #'evil-forward-WORD-begin :scope 'visible)
-  (evilem-make-motion evilem-motion-forward-word-end #'evil-forward-word-end :scope 'visible)
-  (evilem-make-motion evilem-motion-forward-WORD-end #'evil-forward-WORD-end :scope 'visible)
-  (evilem-make-motion evilem-motion-backward-word-begin #'evil-backward-word-begin :scope 'visible)
-  (evilem-make-motion evilem-motion-backward-WORD-begin #'evil-backward-WORD-begin :scope 'visible)
-  (evilem-make-motion evilem-motion-backward-word-end #'evil-backward-word-end :scope 'visible)
-  (evilem-make-motion evilem-motion-backward-WORD-end #'evil-backward-WORD-end :scope 'visible))
-
-
-(use-package! evil-embrace
-  :commands embrace-add-pair embrace-add-pair-regexp
-  :hook (LaTeX-mode . embrace-LaTeX-mode-hook)
-  :hook (LaTeX-mode . +evil-embrace-latex-mode-hook-h)
-  :hook (org-mode . embrace-org-mode-hook)
-  :hook (ruby-mode . embrace-ruby-mode-hook)
-  :hook (emacs-lisp-mode . embrace-emacs-lisp-mode-hook)
-  :hook ((lisp-mode emacs-lisp-mode clojure-mode racket-mode hy-mode)
-         . +evil-embrace-lisp-mode-hook-h)
-  :hook ((c++-mode rustic-mode csharp-mode java-mode swift-mode typescript-mode)
-         . +evil-embrace-angle-bracket-modes-hook-h)
-  :hook (scala-mode . +evil-embrace-scala-mode-hook-h)
-  :init
-  (after! evil-surround
-    (evil-embrace-enable-evil-surround-integration))
-
-  ;; HACK: This must be done ASAP, before embrace has a chance to
-  ;;   buffer-localize `embrace--pairs-list' (which happens right after it calls
-  ;;   `embrace--setup-defaults'), otherwise any new, global default pairs we
-  ;;   define won't be in scope.
-  (defadvice! +evil--embrace-init-escaped-pairs-a (&rest args)
-    "Add escaped-sequence support to embrace."
-    :after #'embrace--setup-defaults
-    (embrace-add-pair-regexp ?\\ "\\[[{(]" "\\[]})]" #'+evil--embrace-escaped
-                             (embrace-build-help "\\?" "\\?")))
-  :config
-  (setq evil-embrace-show-help-p nil)
-
-  (defun +evil-embrace-scala-mode-hook-h ()
-    (embrace-add-pair ?$ "${" "}"))
-
-  (defun +evil-embrace-latex-mode-hook-h ()
-    (dolist (pair '((?\' . ("`" . "\'"))
-                    (?\" . ("``" . "\'\'"))))
-      (delete (car pair) evil-embrace-evil-surround-keys)
-      ;; Avoid `embrace-add-pair' because it would overwrite the default
-      ;; rules, which we want for other modes
-      (push (cons (car pair) (make-embrace-pair-struct
-                              :key (car pair)
-                              :left (cadr pair)
-                              :right (cddr pair)
-                              :left-regexp (regexp-quote (cadr pair))
-                              :right-regexp (regexp-quote (cddr pair))))
-            embrace--pairs-list))
-    (embrace-add-pair-regexp ?l "\\[a-z]+{" "}" #'+evil--embrace-latex))
-
-  (defun +evil-embrace-lisp-mode-hook-h ()
-    ;; Avoid `embrace-add-pair-regexp' because it would overwrite the default
-    ;; `f' rule, which we want for other modes
-    (push (cons ?f (make-embrace-pair-struct
-                    :key ?f
-                    :read-function #'+evil--embrace-elisp-fn
-                    :left-regexp "([^ ]+ "
-                    :right-regexp ")"))
-          embrace--pairs-list))
-
-  (defun +evil-embrace-angle-bracket-modes-hook-h ()
-    (let ((var (make-local-variable 'evil-embrace-evil-surround-keys)))
-      (set var (delq ?< evil-embrace-evil-surround-keys))
-      (set var (delq ?> evil-embrace-evil-surround-keys)))
-    (embrace-add-pair-regexp ?< "\\_<[a-z0-9-_]+<" ">" #'+evil--embrace-angle-brackets)
-    (embrace-add-pair ?> "<" ">")))
-
-
-(use-package! evil-escape
-  :commands evil-escape
-  :hook (doom-first-input . evil-escape-mode)
-  :init
-  (setq evil-escape-excluded-states '(normal visual multiedit emacs motion)
-        evil-escape-excluded-major-modes '(neotree-mode treemacs-mode vterm-mode)
-        evil-escape-key-sequence "jk"
-        evil-escape-delay 0.15)
-  (evil-define-key* '(insert replace visual operator) 'global "\C-g" #'evil-escape)
-  :config
-  ;; `evil-escape' in the minibuffer is more disruptive than helpful. That is,
-  ;; unless we have `evil-collection-setup-minibuffer' enabled, in which case we
-  ;; want the same behavior in insert mode as we do in normal buffers.
-  (add-hook! 'evil-escape-inhibit-functions
-    (defun +evil-inhibit-escape-in-minibuffer-fn ()
-      (and (minibufferp)
-           (or (not (bound-and-true-p evil-collection-setup-minibuffer))
-               (evil-normal-state-p))))))
-
-
-(use-package! evil-exchange
-  :commands evil-exchange
-  :config
-  (add-hook! 'doom-escape-hook
-    (defun +evil--escape-exchange-h ()
-      (when evil-exchange--overlays
-        (evil-exchange-cancel)
-        t))))
-
-
-(use-package! evil-quick-diff
-  :commands (evil-quick-diff evil-quick-diff-cancel))
-
-
-(use-package! evil-nerd-commenter
-  :commands (evilnc-comment-operator
-             evilnc-inner-comment
-             evilnc-outer-commenter)
-  :general ([remap comment-line] #'evilnc-comment-or-uncomment-lines))
-
-
-(use-package! evil-snipe
-  :commands evil-snipe-local-mode evil-snipe-override-local-mode
-  :hook (doom-first-input . evil-snipe-override-mode)
-  :hook (doom-first-input . evil-snipe-mode)
-  :init
-  (setq evil-snipe-smart-case t
-        evil-snipe-scope 'line
-        evil-snipe-repeat-scope 'visible
-        evil-snipe-char-fold t))
-
-
-(use-package! evil-surround
-  :commands (global-evil-surround-mode
-             evil-surround-edit
-             evil-Surround-edit
-             evil-surround-region)
-  :config (global-evil-surround-mode 1))
-
-
-(use-package! evil-textobj-anyblock
-  :defer t
-  :config
-  (setq evil-textobj-anyblock-blocks
-        '(("(" . ")")
-          ("{" . "}")
-          ("\\[" . "\\]")
-          ("<" . ">"))))
-
 
 (use-package! evil-traces
   :after evil-ex
@@ -419,16 +248,43 @@ directives. By default, this only recognizes C directives.")
     "*" #'evil-visualstar/begin-search-forward
     "#" #'evil-visualstar/begin-search-backward))
 
+(use-package evil-mc
+  :diminish
+  :hook (after-init . global-evil-mc-mode)
+  :init
+  (defvar evil-mc-key-map (make-sparse-keymap))
+  :config
+  (defhydra hydra-evil-mc (:color blue :hint nil)
+    "
+ _M_ all match          _m_ here           _u_ undo
+ _n_ next match         _j_ next line      _s_ suspend
+ _p_ prev match         _k_ previous line  _r_ resume
+ _N_ skip & next match  _H_ first cursor   _q_ quit
+ _P_ skip & prev match  _L_ last cursor    _O_ quit
+    "
+    ("m" evil-mc-make-cursor-here :exit nil)
+    ("M" evil-mc-make-all-cursors :exit nil)
+    ("n" evil-mc-make-and-goto-next-match :exit nil)
+    ("p" evil-mc-make-and-goto-prev-match :exit nil)
+    ("N" evil-mc-skip-and-goto-next-match :exit nil)
+    ("P" evil-mc-skip-and-goto-prev-match :exit nil)
+    ("j" evil-mc-make-cursor-move-next-line :exit nil)
+    ("k" evil-mc-make-cursor-move-prev-line :exit nil)
+    ("H" evil-mc-make-and-goto-first-cursor :exit nil)
+    ("L" evil-mc-make-and-goto-last-cursor :exit nil)
+    ("u" evil-mc-undo-last-added-cursor :exit nil)
+    ("r" evil-mc-resume-cursors)
+    ("s" evil-mc-pause-cursors)
+    ("O" evil-mc-undo-all-cursors)
+    ("q" evil-mc-undo-all-cursors))
 
-;;
-;;; Text object plugins
+  (evil-define-key* '(normal visual) 'global
+    (kbd "M") 'hydra-evil-mc/body)
 
-(use-package! exato
-  :commands evil-outer-xml-attr evil-inner-xml-attr)
+  (evil-define-key* 'visual evil-mc-key-map
+    "A" 'evil-mc-make-cursor-in-visual-selection-end
+    "I" 'evil-mc-make-cursor-in-visual-selection-beg))
 
-
-;;
-;;; Keybinds
 
 ;; Keybinds that have no Emacs+evil analogues (i.e. don't exist):
 ;;   zu{q,w} - undo last marking
@@ -497,13 +353,7 @@ directives. By default, this only recognizes C directives.")
       :nv "g@"    #'+evil:apply-macro
       :nv "gc"    #'evilnc-comment-operator
       :nv "gO"    #'imenu
-      :nv "gx"    #'evil-exchange
       :nv "gy"    #'+evil:yank-unindented
-      :n  "g="    #'evil-numbers/inc-at-pt
-      :n  "g-"    #'evil-numbers/dec-at-pt
-      :v  "g="    #'evil-numbers/inc-at-pt-incremental
-      :v  "g-"    #'evil-numbers/dec-at-pt-incremental
-      :v  "g+"    #'evil-numbers/inc-at-pt
       (:when (modulep! :tools lookup)
        :nv "K"   #'+lookup/documentation
        :nv "gd"  #'+lookup/definition
@@ -574,44 +424,6 @@ directives. By default, this only recognizes C directives.")
        "d"       #'evil-window-delete
        "C-C"     #'ace-delete-window
        "T"       #'tear-off-window)
-
-      ;; text objects
-      :textobj "a" #'evil-inner-arg                    #'evil-outer-arg
-      :textobj "B" #'evil-textobj-anyblock-inner-block #'evil-textobj-anyblock-a-block
-      :textobj "c" #'evilnc-inner-comment              #'evilnc-outer-commenter
-      :textobj "f" #'+evil:defun-txtobj                #'+evil:defun-txtobj
-      :textobj "g" #'+evil:whole-buffer-txtobj         #'+evil:whole-buffer-txtobj
-      :textobj "i" #'evil-indent-plus-i-indent         #'evil-indent-plus-a-indent
-      :textobj "j" #'evil-indent-plus-i-indent-up-down #'evil-indent-plus-a-indent-up-down
-      :textobj "k" #'evil-indent-plus-i-indent-up      #'evil-indent-plus-a-indent-up
-      :textobj "q" #'+evil:inner-any-quote             #'+evil:outer-any-quote
-      :textobj "u" #'+evil:inner-url-txtobj            #'+evil:outer-url-txtobj
-      :textobj "x" #'evil-inner-xml-attr               #'evil-outer-xml-attr
-
-      ;; evil-easymotion
-      (:after evil-easymotion
-       :m "gs" evilem-map
-       (:map evilem-map
-        "a" (evilem-create #'evil-forward-arg)
-        "A" (evilem-create #'evil-backward-arg)
-        "s" #'evil-avy-goto-char-2
-        "SPC" (cmd! (let ((current-prefix-arg t)) (evil-avy-goto-char-timer)))
-        "/" #'evil-avy-goto-char-timer))
-
-      ;; evil-snipe
-      (:after evil-snipe
-       :map evil-snipe-parent-transient-map
-       "C-;" (cmd! (require 'evil-easymotion)
-                   (call-interactively
-                    (evilem-create #'evil-snipe-repeat
-                                   :bind ((evil-snipe-scope 'whole-buffer)
-                                          (evil-snipe-enable-highlight)
-                                          (evil-snipe-enable-incremental-highlight))))))
-
-      ;; evil-surround
-      :v "S" #'evil-surround-region
-      :o "s" #'evil-surround-edit
-      :o "S" #'evil-Surround-edit
 
       ;; evil-lion
       :n "gl" #'evil-lion-left
